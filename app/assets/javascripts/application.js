@@ -94,7 +94,7 @@ lmi.jobDetails = function(soc) {
             content          +=  '</ul>';
             content          +=  '<h3>Forecast</h3>';
             content          +=  '<select id="graph_drop_down">';
-            content          +=  '<option value="">-- choose --</option>';
+            content          +=  '<option value="">Total</option>';
                 content          +=  '<option value="gender">Gender</option>';
                 content          +=  '<option value="status">Status</option>';
             content          +=  '<select>';
@@ -125,11 +125,11 @@ lmi.jobDetails = function(soc) {
 
 lmi.drawGraph = function(val, graph_filter) { 
     lmi.graph_data = [];
-    graph_filter= '';
-    console.log('hi');
+    //graph_filter= '';
+    
     
     $('#forecast').replaceWith("<div id='forecast'></div>");
-    
+    console.log(graph_filter);
     if(graph_filter == '') { 
  
         var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
@@ -138,12 +138,53 @@ lmi.drawGraph = function(val, graph_filter) {
            var employment = parseInt(val.employment-offset);
            lmi.graph_data[key] = {'year': val.year.toString(), "employment" : employment }; 
         });
+        lmi.morris();
     }
     
-    else { 
-      //do breakdown    
-    }    
     
+    
+    else if(graph_filter == 'gender') { 
+        $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
+            
+        console.log(data);
+        var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
+
+        $.each(data.predictedEmployment, function(key, val) { 
+            console.log(val);
+            var employment = parseInt(val.employment) - offset;
+            var male = parseInt(val.breakdown[0].employment);
+            var female = parseInt(val.breakdown[1].employment);
+            lmi.graph_data[key] = {'year': val.year.toString(), "male" : male, "female" : female }; 
+        });
+
+        lmi.morrisGender();
+         });
+    }  
+    
+    else if(graph_filter == 'status') { 
+        $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
+            
+        console.log(data);
+        var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
+
+        $.each(data.predictedEmployment, function(key, val) { 
+            console.log(val);
+            var employment = parseInt(val.employment) - offset;
+            var ft = parseInt(val.breakdown[0].employment);
+            var pt = parseInt(val.breakdown[1].employment);
+            var se = parseInt(val.breakdown[2].employment);
+            
+            lmi.graph_data[key] = {'year': val.year.toString(), "FT Employee" : ft, "PT Employee" : pt, "Self Employed" : se }; 
+        });
+
+        lmi.morrisStatus();
+         });
+    }  
+    
+  
+}
+
+lmi.morris = function() { 
     new Morris.Line({
       // ID of the element in which to draw the chart.
       element: 'forecast',
@@ -157,6 +198,40 @@ lmi.drawGraph = function(val, graph_filter) {
       // Labels for the ykeys -- will be displayed when you hover over the
       // chart.
       labels: ['employment']
+    });    
+}
+
+lmi.morrisGender = function() { 
+    new Morris.Line({
+      // ID of the element in which to draw the chart.
+      element: 'forecast',
+      // Chart data records -- each entry in this array corresponds to a point on
+      // the chart.
+      data:  lmi.graph_data,
+      // The name of the data record attribute that contains x-values.
+      xkey: ['year'],
+      // A list of names of data record attributes that contain y-values.
+      ykeys: ['male', 'female'],
+      // Labels for the ykeys -- will be displayed when you hover over the
+      // chart.
+      labels: ['male', 'female']
+    });    
+}
+
+lmi.morrisStatus = function() { 
+    new Morris.Line({
+      // ID of the element in which to draw the chart.
+      element: 'forecast',
+      // Chart data records -- each entry in this array corresponds to a point on
+      // the chart.
+      data:  lmi.graph_data,
+      // The name of the data record attribute that contains x-values.
+      xkey: ['year'],
+      // A list of names of data record attributes that contain y-values.
+      ykeys: ['FT Employee', 'PT Employee', 'Self Employed'],
+      // Labels for the ykeys -- will be displayed when you hover over the
+      // chart.
+      labels: ['FT Employee', 'PT Employee', 'Self Employed']
     });    
 }
 
