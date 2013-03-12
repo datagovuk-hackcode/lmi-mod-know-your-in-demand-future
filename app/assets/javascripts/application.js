@@ -26,6 +26,8 @@ $(document).ready(function(){
         var region_code = $(this).val();
 
         $.getJSON('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
+            
+            lmi.jobs = [];
             lmi.jobs = data.slice(0, 10);
             lmi.regionResults();   
         }); 
@@ -41,16 +43,23 @@ lmi.regionResults = function() {
           
         $.getJSON('http://api.lmiforall.org.uk/api/soc/code/' + val.soc, function(data) { 
             lmi.jobs[key].soc_data = data;
-            var content      =  '<li data-soc="' + lmi.jobs[key].soc_data.soc +  '">' + lmi.jobs[key].soc_data.title + "</li>";
-            $('#results_container').append(content);
-            lmi.attachJobClicks();
+
         });
                 
     });
 
+
+
+
     $.each(lmi.jobs, function(key, val){
         $.getJSON('http://api.lmiforall.org.uk/api/ashe/estimate?soc=' + val.soc, function(data) {
             lmi.jobs[key].ashe_data = data;
+            console.log("----> " + key);
+            console.log("----> " + key);
+            if(key == lmi.jobs.length-1) { 
+                lmi.renderRegionResults();
+                
+            }
         });         
     });  
     
@@ -64,10 +73,12 @@ lmi.regionResults = function() {
 
 
 lmi.jobDetails = function(soc) { 
-    $.each(lmi.jobs, function(key,val) { 
+    $.each(lmi.jobs, function(key,val) {
+        
+        lmi.current_item = val;
         console.log(val.soc_data);
         if(val.soc_data.soc == soc) {
-            var content      =  '<h2>' + val.soc_data.title + "</h2>";
+            var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
             content          +=  '<p>' + val.soc_data.description + "</p>";
             content          +=  '<p><strong>Vacancies that are hard to fill:</strong> ' + parseInt(val.percentHTF) + "%</p>";
             content          +=  '<p><strong>Vacancies unfilled due to skills shortage: </strong> ' + parseInt(val.percentSSV) + "%</p>";
@@ -82,6 +93,11 @@ lmi.jobDetails = function(soc) {
             
             content          +=  '</ul>';
             content          +=  '<h3>Forecast</h3>';
+            content          +=  '<select id="graph_drop_down">';
+            content          +=  '<option value="">-- choose --</option>';
+                content          +=  '<option value="gender">Gender</option>';
+                content          +=  '<option value="status">Status</option>';
+            content          +=  '<select>';
             content          +=  '<div id="forecast"></div>';
             
 
@@ -89,33 +105,59 @@ lmi.jobDetails = function(soc) {
             
             $('#job_detail').html(content);
             
-            lmi.graph_data = [];
-         
-            var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
+            var graph_filter = $('#graph_drop_down').val();
             
-            $.each(val.wf_data.predictedEmployment, function(key, val) { 
-               var employment = parseInt(val.employment-offset);
-               lmi.graph_data[key] = {'year': val.year.toString(), "employment" : employment }; 
-            });
-            
-            new Morris.Line({
-              // ID of the element in which to draw the chart.
-              element: 'forecast',
-              // Chart data records -- each entry in this array corresponds to a point on
-              // the chart.
-              data:  lmi.graph_data,
-              // The name of the data record attribute that contains x-values.
-              xkey: ['year'],
-              // A list of names of data record attributes that contain y-values.
-              ykeys: ['employment'],
-              // Labels for the ykeys -- will be displayed when you hover over the
-              // chart.
-              labels: ['employment']
+            lmi.drawGraph(val, graph_filter);
+
+            $('#graph_drop_down').change(function(){ 
+                
+                var graph_filter = $('#graph_drop_down').val();
+                lmi.drawGraph(lmi.current_item, graph_filter);
             });
 
             $('#instructions').css('display', "none");
         }
     });
+}
+
+
+
+
+lmi.drawGraph = function(val, graph_filter) { 
+    lmi.graph_data = [];
+    graph_filter= '';
+    console.log('hi');
+    
+    $('#forecast').replaceWith("<div id='forecast'></div>");
+    
+    if(graph_filter == '') { 
+ 
+        var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
+    
+        $.each(val.wf_data.predictedEmployment, function(key, val) { 
+           var employment = parseInt(val.employment-offset);
+           lmi.graph_data[key] = {'year': val.year.toString(), "employment" : employment }; 
+        });
+    }
+    
+    else { 
+      //do breakdown    
+    }    
+    
+    new Morris.Line({
+      // ID of the element in which to draw the chart.
+      element: 'forecast',
+      // Chart data records -- each entry in this array corresponds to a point on
+      // the chart.
+      data:  lmi.graph_data,
+      // The name of the data record attribute that contains x-values.
+      xkey: ['year'],
+      // A list of names of data record attributes that contain y-values.
+      ykeys: ['employment'],
+      // Labels for the ykeys -- will be displayed when you hover over the
+      // chart.
+      labels: ['employment']
+    });    
 }
 
 lmi.attachJobClicks = function() { 
@@ -124,3 +166,14 @@ lmi.attachJobClicks = function() {
         lmi.jobDetails(soc);
     });   
 }
+
+lmi.renderRegionResults = function() { 
+    $.each(lmi.jobs, function(key, val){ 
+          
+        var content      =  '<li data-soc="' + lmi.jobs[key].soc_data.soc +  '">' + lmi.jobs[key].soc_data.title + "</li>";
+        $('#results_container').append(content);
+        lmi.attachJobClicks();
+                
+    }); 
+}
+
