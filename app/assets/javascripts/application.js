@@ -26,7 +26,7 @@ $(document).ready(function(){
         var region_code = $(this).val();
 
         $.getJSON('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
-            lmi.jobs = data;
+            lmi.jobs = data.slice(0, 10);
             lmi.regionResults();   
         }); 
     });
@@ -38,28 +38,20 @@ lmi.regionResults = function() {
 
     
     $.each(lmi.jobs, function(key, val){ 
-        
-        
+          
         $.getJSON('http://api.lmiforall.org.uk/api/soc/code/' + val.soc, function(data) { 
             lmi.jobs[key].soc_data = data;
-                
-            if(key <10) { 
-                var content      =  '<li data-soc="' + lmi.jobs[key].soc_data.soc +  '">' + lmi.jobs[key].soc_data.title + "</li>";
-
-                $('#results_container').append(content);
-            }
-            
+            var content      =  '<li data-soc="' + lmi.jobs[key].soc_data.soc +  '">' + lmi.jobs[key].soc_data.title + "</li>";
+            $('#results_container').append(content);
             lmi.attachJobClicks();
         });
                 
     });
 
-    $.each(lmi.jobs, function(key, val){ 
-        
+    $.each(lmi.jobs, function(key, val){
         $.getJSON('http://api.lmiforall.org.uk/api/ashe/estimate?soc=' + val.soc, function(data) {
             lmi.jobs[key].ashe_data = data;
-        });
-                
+        });         
     });  
     
     
@@ -67,14 +59,8 @@ lmi.regionResults = function() {
         $.getJSON('http://api.lmiforall.org.uk/api/wf/predict?minYear=2012&maxYear=2020&soc=' + val.soc, function(data) {
             lmi.jobs[key].wf_data = data;
         });
-    });
-    
-    
-
-    
+    });    
 }
-
-
 
 
 lmi.jobDetails = function(soc) { 
@@ -83,6 +69,8 @@ lmi.jobDetails = function(soc) {
         if(val.soc_data.soc == soc) {
             var content      =  '<h2>' + val.soc_data.title + "</h2>";
             content          +=  '<p>' + val.soc_data.description + "</p>";
+            content          +=  '<p><strong>Vacancies that are hard to fill:</strong> ' + parseInt(val.percentHTF) + "%</p>";
+            content          +=  '<p><strong>Vacancies unfilled due to skills shortage: </strong> ' + parseInt(val.percentSSV) + "%</p>";
             content          +=  '<h3>Qualifications</h3>';
             content          +=  '<p>' + val.soc_data.qualifications + "</p>";
             content          +=  '<h3>Pay</h3>';
@@ -102,11 +90,12 @@ lmi.jobDetails = function(soc) {
             $('#job_detail').html(content);
             
             lmi.graph_data = [];
-            console.log(val.wf_data.predictedEmployment);
-            var offset = val.wf_data.predictedEmployment[0].employment *0.8; 
+         
+            var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
             
             $.each(val.wf_data.predictedEmployment, function(key, val) { 
-               lmi.graph_data[key] = {'year': val.year.toString(), "employment" : val.employment-offset}; 
+               var employment = parseInt(val.employment-offset);
+               lmi.graph_data[key] = {'year': val.year.toString(), "employment" : employment }; 
             });
             
             new Morris.Line({

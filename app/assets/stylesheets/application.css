@@ -12,12 +12,21 @@
  *= require_tree .
  */
  
- h2 { 
-     
+h2 { 
+     text-decoration:italic;
+     border-bottom:1px solid black;
+}
+
+h3 { 
+    margin-top:30px!important;
 }
  
  #results_container li { 
      cursor:pointer;
      text-decoration:underline;
      margin-bottom:5px;
+}
+
+#job_detail { 
+    margin-bottom:200px;
 }
