@@ -54,8 +54,7 @@ lmi.regionResults = function() {
     $.each(lmi.jobs, function(key, val){
         $.getJSON('http://api.lmiforall.org.uk/api/ashe/estimate?soc=' + val.soc, function(data) {
             lmi.jobs[key].ashe_data = data;
-            console.log("----> " + key);
-            console.log("----> " + key);
+ 
             if(key == lmi.jobs.length-1) { 
                 lmi.renderRegionResults();
                 
@@ -168,14 +167,28 @@ lmi.drawGraph = function(val, graph_filter) {
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
 
         $.each(data.predictedEmployment, function(key, val) { 
-            console.log(val);
-            var employment = parseInt(val.employment) - offset;
-            var ft = parseInt(val.breakdown[0].employment);
-            var pt = parseInt(val.breakdown[1].employment);
-            var se = parseInt(val.breakdown[2].employment);
             
-            lmi.graph_data[key] = {'year': val.year.toString(), "FT Employee" : ft, "PT Employee" : pt, "Self Employed" : se }; 
-        });
+            var employment = parseInt(val.employment) - offset;
+            lmi.temp ={};
+            
+            $.each(val.breakdown, function(test_key, test_val) {  
+                if (test_val.code == 1) {
+                   lmi.temp.ft = parseInt(test_val.employment);
+                }
+                
+                if (test_val.code == 2) {
+                    lmi.temp.pt = parseInt(test_val.employment);
+                }
+                
+                if (test_val.code == 3) {
+                    lmi.temp.se = parseInt(test_val.employment);
+                }
+            });
+            
+                
+            lmi.graph_data[key] = {'year': val.year.toString(), "FT Employee" : lmi.temp.ft, "PT Employee" : lmi.temp.pt, "Self Employed" : lmi.temp.se }; 
+            
+         });
 
         lmi.morrisStatus();
          });
