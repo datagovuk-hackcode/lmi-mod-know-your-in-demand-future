@@ -22,16 +22,13 @@ lmi.ready=[];
 $(document).ready(function(){ 
     $('#region_selector').change(function(){
         var region_code = $(this).val();
-        console.log('region_code= ' + region_code);
-        $.get('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
+
+        $.getJSON('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
            
-            lmi.ess_data = JSON.parse(data);
+            lmi.ess_data = data;
             lmi.regionResults();
             
         }); 
-
-        
-        
     });
 });
 
@@ -39,24 +36,36 @@ lmi.regionResults = function() {
     
     $('#results_container').html('');
     
+    lmi.jobs = [];
+    
     $.each(lmi.ess_data, function(key, val){ 
         
-        $.get('http://api.lmiforall.org.uk/api/soc/code/' + val.soc, function(data) { 
-            lmi.jobs[key] = {'soc_data': data};
-            
-            var content      =  '<p>' + data.title + "</p>";
-            content         +=  '';
-            content         +=  '';
-            content         +=  '';
-            content         +=  '';
+        
+        $.getJSON('http://api.lmiforall.org.uk/api/soc/code/' + val.soc, function(data) { 
+            lmi.jobs[key] = {};
+            lmi.jobs[key].soc_data = data;
+                
+            if(key <10) { 
+                var content      =  '<li>' + lmi.jobs[key].soc_data.title + "</li>";
 
-            $('#results_container').append(content);
-            
+                $('#results_container').append(content);
+            }
+        });
+        
+        $.getJSON('http://api.lmiforall.org.uk/api/ashe/estimate?soc=' + val.soc, function(data) { 
+            lmi.jobs[key] = {};
+            lmi.jobs[key].ashe_data = data;
         });
      
         
     });
-    
+}
 
-    
+lmi.jobDetails = function(soc) { 
+    $.each(lmi.jobs, function(key,val) { 
+        if(val.soc_data.soc == soc) {
+            
+ 
+        }
+    });
 }
