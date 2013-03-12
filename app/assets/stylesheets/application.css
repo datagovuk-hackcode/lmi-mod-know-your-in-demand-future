@@ -11,3 +11,13 @@
  *= require_self
  *= require_tree .
  */
+ 
+ h2 { 
+     
+}
+ 
+ #results_container li { 
+     cursor:pointer;
+     text-decoration:underline;
+     margin-bottom:5px;
+}
