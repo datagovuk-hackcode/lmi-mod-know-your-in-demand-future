@@ -1,0 +1,2 @@
+class InDemandController < ApplicationController
+end
