@@ -8,6 +8,7 @@ gem 'rails', '3.2.11'
 gem "pg", :group => :production
 gem "sqlite3-ruby", :group => :development
 gem "therubyracer"
+gem "libv8", "~> 3.11.8.13"
 
 # Gems used only for assets and not required
 # in production environments by default.
