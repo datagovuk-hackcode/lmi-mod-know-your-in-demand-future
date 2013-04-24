@@ -12,6 +12,11 @@
  *= require_tree .
  */
  
+body {
+    background-image:url('http://www.feelgoodlambeth.org/assets/main_bkg.png');
+
+} 
+ 
 h2 { 
      text-decoration:italic;
      border-bottom:1px solid black;
@@ -29,4 +34,9 @@ h3 {
 
 #job_detail { 
     margin-bottom:200px;
+}
+
+#ytplayer { 
+    margin-left:20px;
+    margin-top:20px;
 }

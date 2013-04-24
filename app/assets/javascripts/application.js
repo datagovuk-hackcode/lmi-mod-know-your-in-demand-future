@@ -19,14 +19,12 @@
 
 lmi = {};
 lmi.jobs = [];
-lmi.ready=[];
+lmi.ready= [];
 
 $(document).ready(function(){ 
     $('#region_selector').change(function(){
         var region_code = $(this).val();
-
         $.getJSON('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
-            
             lmi.jobs = [];
             lmi.jobs = data.slice(0, 10);
             lmi.regionResults();   
@@ -37,7 +35,6 @@ $(document).ready(function(){
 lmi.regionResults = function() { 
     
     $('#results_container').html('');
-
     
     $.each(lmi.jobs, function(key, val){ 
           
@@ -47,8 +44,6 @@ lmi.regionResults = function() {
         });
                 
     });
-
-
 
 
     $.each(lmi.jobs, function(key, val){
@@ -72,12 +67,12 @@ lmi.regionResults = function() {
 
 
 lmi.jobDetails = function(soc) { 
+    lmi.first_time = 0; 
+   
     $.each(lmi.jobs, function(key,val) {
-        
-        lmi.current_item = val;
-        console.log(val.soc_data);
-        if(val.soc_data.soc == soc) {
-            var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
+       
+        if(val.soc_data.soc == soc && lmi.first_time === 0) {
+             var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
             content          +=  '<p>' + val.soc_data.description + "</p>";
             content          +=  '<p><strong>Vacancies that are hard to fill:</strong> ' + parseInt(val.percentHTF) + "%</p>";
             content          +=  '<p><strong>Vacancies unfilled due to skills shortage: </strong> ' + parseInt(val.percentSSV) + "%</p>";
@@ -99,10 +94,13 @@ lmi.jobDetails = function(soc) {
             content          +=  '<select>';
             content          +=  '<div id="forecast"></div>';
             
+            
 
             
-            
             $('#job_detail').html(content);
+            lmi.first_time++;
+            console.log('calling vid player ' + lmi.first_time);
+            lmi.returnVideoPlayer(val.soc_data.title);
             
             var graph_filter = $('#graph_drop_down').val();
             
@@ -115,7 +113,14 @@ lmi.jobDetails = function(soc) {
             });
 
             $('#instructions').css('display', "none");
+            
+            
+            
+            
         }
+        
+        
+
     });
 }
 
@@ -128,7 +133,7 @@ lmi.drawGraph = function(val, graph_filter) {
     
     
     $('#forecast').replaceWith("<div id='forecast'></div>");
-    console.log(graph_filter);
+    
     if(graph_filter == '') { 
  
         var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
@@ -140,30 +145,39 @@ lmi.drawGraph = function(val, graph_filter) {
         lmi.morris();
     }
     
-    
-    
-    else if(graph_filter == 'gender') { 
+    else if(graph_filter === 'gender') { 
         $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
             
-        console.log(data);
-        var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
+            var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
 
-        $.each(data.predictedEmployment, function(key, val) { 
-            console.log(val);
-            var employment = parseInt(val.employment) - offset;
-            var male = parseInt(val.breakdown[0].employment);
-            var female = parseInt(val.breakdown[1].employment);
-            lmi.graph_data[key] = {'year': val.year.toString(), "male" : male, "female" : female }; 
+            $.each(data.predictedEmployment, function(key, val) { 
+
+                var employment = parseInt(val.employment) - offset;
+                lmi.temp ={};
+
+                $.each(val.breakdown, function(test_key, test_val) {  
+                    if (test_val.code == 1) {
+                       lmi.temp.male = parseInt(test_val.employment);
+                    }
+
+                    if (test_val.code == 2) {
+                        lmi.temp.female = parseInt(test_val.employment);
+                    }
+
+                });
+
+                lmi.graph_data[key] = {'year': val.year.toString(), "male" : lmi.temp.male, "female" : lmi.temp.female }; 
+            });    
+        
+
+            lmi.morrisGender();
         });
-
-        lmi.morrisGender();
-         });
     }  
     
     else if(graph_filter == 'status') { 
         $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
             
-        console.log(data);
+        
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
 
         $.each(data.predictedEmployment, function(key, val) { 
@@ -252,7 +266,7 @@ lmi.attachJobClicks = function() {
     $('#results_container li').click(function(){ 
         var soc = $(this).attr('data-soc');  
         lmi.jobDetails(soc);
-    });   
+    });
 }
 
 lmi.renderRegionResults = function() { 
@@ -260,8 +274,24 @@ lmi.renderRegionResults = function() {
           
         var content      =  '<li data-soc="' + lmi.jobs[key].soc_data.soc +  '">' + lmi.jobs[key].soc_data.title + "</li>";
         $('#results_container').append(content);
-        lmi.attachJobClicks();
-                
+        if(lmi.jobs.length-1 === key) {
+            lmi.attachJobClicks();
+            console.log('attaching clicks');
+        }    
     }); 
+}
+
+lmi.returnVideoPlayer = function(query) { 
+    console.log('called!');
+    $.getJSON('http://jimmytidey.co.uk/lmi/videos.php?callback=?&query=' + query, function(data) {
+        
+        if (typeof data.feed.entry !== 'undefined') {
+            console.log(data.feed.entry);
+            var vid_url = data.feed.entry[0]['media$group']['media$player'][0]['url'];
+            var vid_id = vid_url.split('http://www.youtube.com/watch?v=')[1];
+            vid_id = vid_id.split('&feature=youtube_gdata_player')[0];
+            $('#job_detail').append('<iframe id="ytplayer" type="text/html" width="640" height="390" src="http://www.youtube.com/embed/'+ vid_id + '?autoplay=1" frameborder="0"/>');
+        }
+    });
 }
 
