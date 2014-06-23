@@ -21,7 +21,7 @@ group :assets do
 end
 
 gem 'jquery-rails'
-gem "therubyracer"
+
 gem "less-rails" #Sprockets (what Rails 3.1 uses for its asset pipeline) supports LESS
 gem "twitter-bootstrap-rails"
 
@@ -39,3 +39,6 @@ gem "twitter-bootstrap-rails"
 
 # To use debugger
 # gem 'debugger'
+
+gem 'therubyracer'
+gem 'libv8', '3.16.14.3'

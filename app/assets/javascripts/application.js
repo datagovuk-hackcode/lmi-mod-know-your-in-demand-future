@@ -25,8 +25,7 @@ $(document).ready(function(){
     $('#region_selector').change(function(){
         var region_code = $(this).val();
 
-        $.getJSON('http://api.lmiforall.org.uk/api/ess/regions/ranksocs/'+region_code, function(data){ 
-            
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/ess/regions/ranksocs/'+region_code + "?callback=?", function(data){ 
             lmi.jobs = [];
             lmi.jobs = data.slice(0, 10);
             lmi.regionResults();   
@@ -41,7 +40,7 @@ lmi.regionResults = function() {
     
     $.each(lmi.jobs, function(key, val){ 
           
-        $.getJSON('http://api.lmiforall.org.uk/api/soc/code/' + val.soc, function(data) { 
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/soc/code/' + val.soc + "?callback=?", function(data) { 
             lmi.jobs[key].soc_data = data;
 
         });
@@ -52,7 +51,7 @@ lmi.regionResults = function() {
 
 
     $.each(lmi.jobs, function(key, val){
-        $.getJSON('http://api.lmiforall.org.uk/api/ashe/estimate?soc=' + val.soc, function(data) {
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/ashe/estimatePay?soc=' + val.soc + "&callback=?", function(data) {
             lmi.jobs[key].ashe_data = data;
             console.log("----> " + key);
             console.log("----> " + key);
@@ -65,7 +64,7 @@ lmi.regionResults = function() {
     
     
     $.each(lmi.jobs, function(key, val){ 
-        $.getJSON('http://api.lmiforall.org.uk/api/wf/predict?minYear=2012&maxYear=2020&soc=' + val.soc, function(data) {
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict?minYear=2012&maxYear=2020&soc=' + val.soc + "&callback=?", function(data) {
             lmi.jobs[key].wf_data = data;
         });
     });    
@@ -73,10 +72,12 @@ lmi.regionResults = function() {
 
 
 lmi.jobDetails = function(soc) { 
+    
+    console.log(lmi.jobs);
     $.each(lmi.jobs, function(key,val) {
         
         lmi.current_item = val;
-        console.log(val.soc_data);
+        
         if(val.soc_data.soc == soc) {
             var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
             content          +=  '<p>' + val.soc_data.description + "</p>";
@@ -87,7 +88,9 @@ lmi.jobDetails = function(soc) {
             content          +=  '<h3>Pay</h3>';
             content          +=  '<ul class="pay">';
             
-            $.each(val.ashe_data.years, function(ashe_key, ashe_val) {
+            console.log(val.ashe_data); 
+
+            $.each(val.ashe_data.series, function(ashe_key, ashe_val) {
                 content          +=  '<li>' + ashe_val.year + ' : £' + parseInt(ashe_val.estpay) + ' per week</li>';
             });
             
@@ -144,7 +147,7 @@ lmi.drawGraph = function(val, graph_filter) {
     
     
     else if(graph_filter == 'gender') { 
-        $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
             
         console.log(data);
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
@@ -162,7 +165,7 @@ lmi.drawGraph = function(val, graph_filter) {
     }  
     
     else if(graph_filter == 'status') { 
-        $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
             
         console.log(data);
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
