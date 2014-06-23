@@ -94,7 +94,7 @@ lmi.jobDetails = function(job_pos, sub_job_pos) {
 
         val = lmi.jobs[job_pos].sub_jobs[sub_job_pos];
         console.log(val); 
-        var content      =  '<h2 data-soc="'+val.soc+'">' + val.title + "</h2>";
+        var content      =  '<h2 class="job_title" data-soc="'+val.soc+'">' + val.title + "</h2>";
         //content          +=  "<h3>In 2012, the number of people employed were ……..  (/wf/predict), in 2013 it was……. (/wf/predict).</h3>";
         if(val.wf_data.predictedEmployment[0].employment > val.wf_data.predictedEmployment[0].employment) {
           content        += "<h3> The number of jobs for "+val.title+" is likely to go down :(</h3>"; 
@@ -102,10 +102,10 @@ lmi.jobDetails = function(job_pos, sub_job_pos) {
           content        += "<h3> The number of jobs for "+val.title+" is likely to go up next year!</h3>";
         }
 
-        //content          +=  "<h3>It is estimated that in 2014 ………. number of people will be employed in this sector, in 2015, it will be</h3>";
         
-        content          +=  '<h3>' + parseInt(val.percentSSV) + "% of positions for "+val.title+" are waiting for someone like you to fill them.</h3>";
-
+        content          +=  '<h3>' + parseInt(val.percentSSV) + "% of positions for "+val.title+" are waiting for someone like you to fill them. <a class='jobsearch-link' >Click here to see available jobs.</a></h3>";
+        
+        content          +=  '<table id = "socjobsearch"> <tr> </tr> </table>';        
         content          +=  "<h3>On average, "+val.title+" earned £" + parseInt(val.ashe_data.series[0].estpay) +" per week in the year 2012.</h3>";
 
         
@@ -115,15 +115,6 @@ lmi.jobDetails = function(job_pos, sub_job_pos) {
         content          +=  '<h2>Qualifications</h2>';
         content          +=  '<p>' + val.qualifications + "</p>";
 
-
-        content          +=  '<h3>Pay</h3>';
-        content          +=  '<ul class="pay">';
-
-        $.each(val.ashe_data.series, function(ashe_key, ashe_val) {
-            content          +=  '<li>' + ashe_val.year + ' : £' + parseInt(ashe_val.estpay) + ' per week</li>';
-        });
-
-        content          +=  '</ul>';
         content          +=  '<h3>Forecast</h3>';
         content          +=  '<select id="graph_drop_down">';
         content          +=  '<option value="">Total</option>';
@@ -141,10 +132,14 @@ lmi.jobDetails = function(job_pos, sub_job_pos) {
         $('#graph_drop_down').change(function(){ 
 
           var graph_filter = $('#graph_drop_down').val();
-          lmi.drawGraph(lmi.current_item, graph_filter);
-      });
+          lmi.drawGraph(val, graph_filter);
+        });
 
-    $('#instructions').css('display', "none");
+        $(".jobsearch-link").click(function(){
+          getSOCsForJobTitle($('.job_title').html());
+        });
+
+        $('#instructions').css('display', "none");
 
 }
 
@@ -152,21 +147,25 @@ lmi.jobDetails = function(job_pos, sub_job_pos) {
 
 
 lmi.drawGraph = function(val, graph_filter) { 
+
+  console.log("SOC ");
+  console.log(val.SOC);
+
   lmi.graph_data = [];
-    //graph_filter= '';
     
+  $('#forecast').replaceWith("<div id='forecast'></div>");
     
-    $('#forecast').replaceWith("<div id='forecast'></div>");
-    
-    if(graph_filter == '') {
+  if(graph_filter == '') {
 
-      var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
+    var offset = val.wf_data.predictedEmployment[0].employment * 0.8; 
 
-      $.each(val.wf_data.predictedEmployment, function(key, val) { 
-       var employment = parseInt(val.employment-offset);
-       lmi.graph_data[key] = {'year': val.year.toString(), "employment" : employment }; 
-   });
-      lmi.morris();
+    $.each(val.wf_data.predictedEmployment, function(key, loop_val) {
+          console.log(loop_val);
+         var employment = parseInt(loop_val.employment-offset);
+         lmi.graph_data[key] = {'year': loop_val.year.toString(), "employment" : employment }; 
+     });
+    
+    lmi.morris();
   }
 
 
@@ -176,10 +175,22 @@ lmi.drawGraph = function(val, graph_filter) {
 
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
 
-        $.each(data.predictedEmployment, function(key, val) { 
+        $.each(data.predictedEmployment, function(key, val) {
+            console.log(val);
             var employment = parseInt(val.employment) - offset;
-            var male = parseInt(val.breakdown[0].employment);
-            var female = parseInt(val.breakdown[1].employment);
+            var male; 
+            var female;
+
+            $.each(val.breakdown, function(inner_key, inner_val) {
+              
+              if (inner_val.name === 'female') {
+                male = parseInt(inner_val.employment);
+              }
+              if (inner_val.name === 'Male') {
+                female = parseInt(inner_val.employment);
+              }
+            });
+
             lmi.graph_data[key] = {'year': val.year.toString(), "male" : male, "female" : female }; 
         });
 
@@ -190,15 +201,32 @@ lmi.drawGraph = function(val, graph_filter) {
   else if(graph_filter == 'status') { 
       $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
 
-        console.log(data);
+        
         var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
 
         $.each(data.predictedEmployment, function(key, val) { 
-          console.log(val);
+          
           var employment = parseInt(val.employment) - offset;
-          var ft = parseInt(val.breakdown[0].employment);
-          var pt = parseInt(val.breakdown[1].employment);
-          var se = parseInt(val.breakdown[2].employment);
+          var pt;
+          var ft;
+          var se;
+
+          $.each(val.breakdown, function(inner_key, inner_val) {
+            console.log(inner_val);
+            if (inner_val.name === 'Self Employed') {
+              se = parseInt(inner_val.employment);
+            }
+
+            if (inner_val.name === 'FT Employee') {
+              ft = parseInt(inner_val.employment);
+            }
+
+            if (inner_val.name === 'PT Employee') {
+              pt = parseInt(inner_val.employment);
+            }
+
+          });          
+
 
           lmi.graph_data[key] = {'year': val.year.toString(), "FT Employee" : ft, "PT Employee" : pt, "Self Employed" : se }; 
       });
