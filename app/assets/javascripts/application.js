@@ -24,6 +24,7 @@ lmi.sub_jobs = [];
 
 $(document).ready(function(){ 
   $('#region_selector').change(function(){
+
     var region_code = $(this).val();
 
     //get a list of the most indemand jobs by soc code
@@ -39,13 +40,19 @@ lmi.regionResults = function() {
 
   $('#results_container').html('');
 
+  $('#job_detail').html('');
+  $('#instructions').html('');
+  
+  $('#job_detail').append('<h2>Employers in your area are looking for: </h2>');  
+  
   //loop through the list of soc codes we just got
     $.each(lmi.jobs, function(job_key, job_val){ 
 
         //get title of each of the most in demand jobs for which we only have soc codes
         $.getJSON('http://api.lmiforall.org.uk/api/v1/soc/code/' + job_val.soc + "?callback=?", function(data) { 
+            $('#job_detail').append("<h3>" + data.title + '</h3>');
 
-            job_val.job_cat = cat_title = data.title; 
+            job_val.job_cat = data.title; 
             job_val.sub_jobs = [];
 
             //do a search for jobs with similar titles 
@@ -54,6 +61,10 @@ lmi.regionResults = function() {
                 //for each job with a similar title, get all the data we want
                 $.each(search_data, function(sub_job_key,sub_job_val){
                     if(sub_job_key<3){
+
+                        sub_job_val.percentSSV = job_val.percentSSV;
+                        sub_job_val.percentHTF = job_val.percentHTF;
+                        
                         job_val.sub_jobs.push(sub_job_val);
                         
                         $.getJSON('http://api.lmiforall.org.uk/api/v1/ashe/estimatePay?soc=' + sub_job_val.soc + "&callback=?", function(data) {
@@ -65,6 +76,7 @@ lmi.regionResults = function() {
                             if(sub_job_key == lmi.jobs[job_key].sub_jobs.length-1 &&
                                 job_key == lmi.jobs.length-1) { 
                                 lmi.renderRegionResults();
+                                $('#job_detail').append('</h3>');
                             }
                         });
                     }
@@ -78,20 +90,32 @@ lmi.regionResults = function() {
 }
 
 
-lmi.jobDetails = function(soc) {
+lmi.jobDetails = function(job_pos, sub_job_pos) {
 
+        val = lmi.jobs[job_pos].sub_jobs[sub_job_pos];
+        console.log(val); 
+        var content      =  '<h2 data-soc="'+val.soc+'">' + val.title + "</h2>";
+        //content          +=  "<h3>In 2012, the number of people employed were ……..  (/wf/predict), in 2013 it was……. (/wf/predict).</h3>";
+        if(val.wf_data.predictedEmployment[0].employment > val.wf_data.predictedEmployment[0].employment) {
+          content        += "<h3> The number of jobs for "+val.title+" is likely to go down :(</h3>"; 
+        } else { 
+          content        += "<h3> The number of jobs for "+val.title+" is likely to go up next year!</h3>";
+        }
 
-    $.each(lmi.sub_jobs, function(key,val) {
+        //content          +=  "<h3>It is estimated that in 2014 ………. number of people will be employed in this sector, in 2015, it will be</h3>";
+        
+        content          +=  '<h3>' + parseInt(val.percentSSV) + "% of positions for "+val.title+" are waiting for someone like you to fill them.</h3>";
 
-      lmi.current_item = val;
+        content          +=  "<h3>On average, "+val.title+" earned £" + parseInt(val.ashe_data.series[0].estpay) +" per week in the year 2012.</h3>";
 
-      if(val.soc == soc) {
-        var content      =  '<h2 data-soc="'+soc+'">' + val.title + "</h2>";
+        
+        content          +=  "<h2>Description</h2>";
         content          +=  '<p>' + val.description + "</p>";
-        content          +=  '<p><strong>Vacancies that are hard to fill:</strong> ' + parseInt(val.percentHTF) + "%</p>";
-        content          +=  '<p><strong>Vacancies unfilled due to skills shortage: </strong> ' + parseInt(val.percentSSV) + "%</p>";
-        content          +=  '<h3>Qualifications</h3>';
+
+        content          +=  '<h2>Qualifications</h2>';
         content          +=  '<p>' + val.qualifications + "</p>";
+
+
         content          +=  '<h3>Pay</h3>';
         content          +=  '<ul class="pay">';
 
@@ -120,9 +144,8 @@ lmi.jobDetails = function(soc) {
           lmi.drawGraph(lmi.current_item, graph_filter);
       });
 
-        $('#instructions').css('display', "none");
-    }
-});
+    $('#instructions').css('display', "none");
+
 }
 
 
@@ -239,22 +262,37 @@ lmi.morrisStatus = function() {
 }
 
 lmi.attachJobClicks = function() { 
-    $('#results_container li').click(function(){ 
-      var soc = $(this).attr('data-soc');  
-      lmi.jobDetails(soc);
-  });   
+    $('#results_container ul li').click(function(){
+        var job_pos = $(this).attr('data-job-pos');
+        var sub_job_pos = $(this).attr('data-sub-job-pos');  
+
+        lmi.jobDetails(job_pos, sub_job_pos);
+    });   
 }
 
 lmi.renderRegionResults = function() { 
     
-    $.each(lmi.jobs, function(job_key, val){
-        $('#results_container').append('<li></li><ol>');
-        var content  =  '<li data-soc="' + lmi.sub_jobs[key].soc +  '">' + lmi.sub_jobs[key].title + "</li>";
-        $('#results_container').append(content);
-        
-        $('#results_container').append('</ol>');
+    $.each(lmi.jobs, function(job_key, job_val){
+        console.log('new item');
+        var content = '<li>'+job_val.job_cat+'</li>';
+        content += "<ul>";
+        $.each(job_val.sub_jobs, function(sub_job_key, sub_job_val){
+            content  +=  '<li data-soc="' + sub_job_val.soc +  '" data-job-pos=' + job_key + ' data-sub-job-pos=' + sub_job_key +' >' + sub_job_val.title + "</li>";
+            
+           
+            if(sub_job_key == job_val.sub_jobs.length - 1) {
+                content  += '</ul>';    
+                $('#results_container').append(content);
 
-        lmi.attachJobClicks();
+                if(lmi.jobs.length - 1 == job_key){
+                    console.log('clicksattached');
+                    lmi.attachJobClicks();
+                }
+            }        
+        }); 
+        
+
+        
     }); 
 }
 
