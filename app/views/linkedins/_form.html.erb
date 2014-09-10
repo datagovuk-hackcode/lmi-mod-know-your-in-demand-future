@@ -1,0 +1,17 @@
+<%= form_for(@linkedin) do |f| %>
+  <% if @linkedin.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@linkedin.errors.count, "error") %> prohibited this linkedin from being saved:</h2>
+
+      <ul>
+      <% @linkedin.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

@@ -1,0 +1,21 @@
+<h1>Listing linkedins</h1>
+
+<table>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+
+<% @linkedins.each do |linkedin| %>
+  <tr>
+    <td><%= link_to 'Show', linkedin %></td>
+    <td><%= link_to 'Edit', edit_linkedin_path(linkedin) %></td>
+    <td><%= link_to 'Destroy', linkedin, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New Linkedin', new_linkedin_path %>

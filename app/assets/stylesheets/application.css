@@ -40,3 +40,11 @@ h3 {
     margin-left:20px;
     margin-top:20px;
 }
+
+.sidebar-nav { 
+    background-color:white!important;
+}
+
+.navbar-fluid-top { 
+    background-color:white!important;    
+}

@@ -72,7 +72,8 @@ lmi.jobDetails = function(soc) {
     $.each(lmi.jobs, function(key,val) {
        
         if(val.soc_data.soc == soc && lmi.first_time === 0) {
-             var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
+            lmi.current_item = val;
+            var content      =  '<h2 data-soc="'+soc+'">' + val.soc_data.title + "</h2>";
             content          +=  '<p>' + val.soc_data.description + "</p>";
             content          +=  '<p><strong>Vacancies that are hard to fill:</strong> ' + parseInt(val.percentHTF) + "%</p>";
             content          +=  '<p><strong>Vacancies unfilled due to skills shortage: </strong> ' + parseInt(val.percentSSV) + "%</p>";
@@ -93,7 +94,8 @@ lmi.jobDetails = function(soc) {
                 content          +=  '<option value="status">Status</option>';
             content          +=  '<select>';
             content          +=  '<div id="forecast"></div>';
-            
+            content          +=  '<h3>Example CV</h3>';
+            content          +=  '<div id="example_cv_container"></h3>';            
             
 
             
@@ -101,11 +103,12 @@ lmi.jobDetails = function(soc) {
             lmi.first_time++;
             console.log('calling vid player ' + lmi.first_time);
             lmi.returnVideoPlayer(val.soc_data.title);
+            lmi.getCvImage(val.soc_data.title);
             
             var graph_filter = $('#graph_drop_down').val();
             
             lmi.drawGraph(val, graph_filter);
-
+            
             $('#graph_drop_down').change(function(){ 
                 
                 var graph_filter = $('#graph_drop_down').val();
@@ -130,7 +133,7 @@ lmi.jobDetails = function(soc) {
 lmi.drawGraph = function(val, graph_filter) { 
     lmi.graph_data = [];
     //graph_filter= '';
-    
+    console.log("val?" + val);
     
     $('#forecast').replaceWith("<div id='forecast'></div>");
     
@@ -146,10 +149,11 @@ lmi.drawGraph = function(val, graph_filter) {
     }
     
     else if(graph_filter === 'gender') { 
+        
         $.getJSON('http://api.lmiforall.org.uk/api/wf/predict/breakdown/' + graph_filter + '?soc=' + val.soc, function(data) {
             
             var offset = data.predictedEmployment[0].breakdown[0].employment * 0.8; 
-
+            
             $.each(data.predictedEmployment, function(key, val) { 
 
                 var employment = parseInt(val.employment) - offset;
@@ -293,5 +297,16 @@ lmi.returnVideoPlayer = function(query) {
             $('#job_detail').append('<iframe id="ytplayer" type="text/html" width="640" height="390" src="http://www.youtube.com/embed/'+ vid_id + '?autoplay=1" frameborder="0"/>');
         }
     });
+}
+
+lmi.getCvImage =function(query) { 
+    
+    
+    $.getJSON('http://ajax.googleapis.com/ajax/services/search/images?v=1.0&callback=?&q=' + query + ' Resume CV curriculum vitae', function(data){
+        var image_url = data.responseData.results[0].url;
+        $('#example_cv_container').append("<img src='" +  image_url +"' />");
+    });
+    
+        
 }
 
