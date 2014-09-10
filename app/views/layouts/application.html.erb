@@ -39,10 +39,10 @@
 
 <div class="container-fluid">
     <div class="row-fluid">
-        <div class="span3">
+        <div class="span3 offset1">
             <div class="well sidebar-nav">
                 <select id='region_selector'>
-                    <option value=''> Where are you? </option>
+                    <option value='choose'> Where are you? </option>
                     <option value='1'>London</option>
                     <option value='3'>East of England</option>
                     <option value='2'>South East (England)</option>
@@ -69,7 +69,7 @@
             </div>
 
         </div><!--/span-->
-        <div class="span9">
+        <div class="span8">
             <%= bootstrap_flash %>
             <%= yield %>
         </div>
