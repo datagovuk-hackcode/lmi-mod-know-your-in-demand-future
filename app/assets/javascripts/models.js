@@ -74,17 +74,71 @@ lmi.addSOCData = function(){
 
 
 lmi.getDataForSOC = function(job_key) {
-    this.soc = soc; 
+    var     soc = lmi.jobs[job_key].soc; 
+    
     $.when(
-        $.getJSON("http://api.lmiforall.org.uk/api/v1/ashe/estimatePay?soc="+soc+"4&age=20&coarse=false", function(data){
-            
+        $.getJSON("http://api.lmiforall.org.uk/api/v1/ashe/estimatePay?soc="+soc+"&age=20&coarse=false", function(data){
+            lmi.jobs[job_key].estimated_pay = data; 
         }),
         $.getJSON("http://api.lmiforall.org.uk/api/v1/ashe/estimateHours?soc="+soc+"&coarse=false", function(data){
-            
+            lmi.jobs[job_key].estimate_hours = data; 
         }),
         $.getJSON("http://api.lmiforall.org.uk/api/v1/wf/predict?minYear=2012&maxYear=2020&soc="+soc+"&coarse=false", function(data){
+            lmi.jobs[job_key].wf_data = data;
             
-        })
+            var offset = data.predictedEmployment[0].employment * 0.8; 
+            lmi.jobs[job_key].total_graph = [];
+            $.each(data.predictedEmployment, function(key, loop_val) {
+                
+                var employment = parseInt(loop_val.employment-offset);
+                
+                lmi.jobs[job_key].total_graph[key] = {'year': loop_val.year.toString(), "employment" : employment }; 
+            });
+        }),
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict/breakdown/gender?soc=' + soc, function(data) {
+            var gender_data = data.predictedEmployment[0].breakdown;
+            
+            var total = gender_data[0].employment + gender_data[1].employment;
+            var first_pc    = parseInt(gender_data[0].employment / total *100) ;
+            var second_pc   = parseInt(gender_data[1].employment / total *100) ;
+                
+            lmi.jobs[job_key].gender_graph = [];
+            
+            lmi.jobs[job_key].gender_graph[0] = { 
+                label: gender_data[0].name,
+                value: first_pc,
+            }
+            
+            lmi.jobs[job_key].gender_graph[1] = { 
+                label: gender_data[1].name,
+                value: second_pc,
+            }
+        }),
+        $.getJSON('http://api.lmiforall.org.uk/api/v1/wf/predict/breakdown/status?soc=' + soc, function(data) {
+            var status_data = data.predictedEmployment[0].breakdown;
+            
+            var total = status_data[0].employment + status_data[1].employment + status_data[2].employment ;
+            var first_pc    = parseInt(status_data[0].employment / total *100) ;
+            var second_pc   = parseInt(status_data[1].employment / total *100) ;
+            var third_pc   = parseInt(status_data[2].employment / total *100) ;
+            
+            lmi.jobs[job_key].status_graph = [];
+            
+            lmi.jobs[job_key].status_graph[0] = { 
+                label: status_data[0].name,
+                value: first_pc,
+            }
+            
+            lmi.jobs[job_key].status_graph[1] = { 
+                label: status_data[1].name,
+                value: second_pc,
+            }
+            
+            lmi.jobs[job_key].status_graph[2] = { 
+                label: status_data[2].name,
+                value: third_pc,
+            }
+        })    
         
         
     ).then(function() {

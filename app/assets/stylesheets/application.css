@@ -13,14 +13,31 @@
  */
  
 body {
-    background-color: #eee;
+    background-color: #999;
     padding-top:30px;
-
+    color:#333;
 } 
+ 
+p { 
+    color:#444;
+}
  
 h2 { 
      text-decoration:italic;
      border-bottom:1px solid black;
+     font-size:15px;
+}
+
+.graph_container { 
+    height:200px;
+}
+
+#total_graph text { 
+    display:none;
+}
+
+.graph_hack_lables { 
+    margin-left:24px;
 }
 
 h3 { 
